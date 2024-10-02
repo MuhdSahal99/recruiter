@@ -1,4 +1,3 @@
-// CandidateCard.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,16 +5,15 @@ interface CandidateCardProps {
   id: string;
   name: string;
   title: string;
-  description: string;
+  llm_response: string;
   matchingScore: number;
-  imageUrl: string;
+  onDownloadCV: () => void;
 }
 
-const CandidateCard: React.FC<CandidateCardProps> = ({ id, name, title, description, matchingScore, imageUrl }) => {
+const CandidateCard: React.FC<CandidateCardProps> = ({ id, name, title, llm_response, matchingScore, onDownloadCV }) => {
   const navigate = useNavigate();
 
   const handleCandidateDetails = () => {
-    // Update the navigation path to include '/employer'
     navigate(`/employer/candidate/${id}`);
   };
 
@@ -24,19 +22,13 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ id, name, title, descript
       <div className="flex justify-between items-start w-full">
         <div className="flex flex-col flex-1 min-w-[240px] max-w-[70%]">
           <div className="flex gap-3 items-center">
-            <img
-              loading="lazy"
-              src={imageUrl}
-              className="object-contain w-10 h-10 rounded-full"
-              alt={name}
-            />
             <div className="flex flex-col justify-center text-sm leading-none">
               <div className="font-medium text-zinc-950">{name}</div>
               <div className="text-zinc-500">{title}</div>
             </div>
           </div>
           <div className="mt-4 text-sm leading-5 text-zinc-950">
-            {description}
+            {llm_response}
           </div>
         </div>
         <div className="flex flex-col items-end">
@@ -59,7 +51,10 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ id, name, title, descript
             </div>
           </div>
           <div className="flex gap-2 w-full">
-            <button className="flex justify-center items-center px-3 py-2 text-sm font-medium text-zinc-950 rounded-lg border border-solid border-neutral-900 border-opacity-40">
+            <button 
+              onClick={onDownloadCV}
+              className="flex justify-center items-center px-3 py-2 text-sm font-medium text-zinc-950 rounded-lg border border-solid border-neutral-900 border-opacity-40"
+            >
               <span>Download CV</span>
               <img
                 loading="lazy"

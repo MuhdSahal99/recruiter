@@ -1,26 +1,61 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import CandidateCard from '../../componenets/Candidatecard';
+
+interface JobPostDetails {
+  jobTitle: string;
+  companyName: string;
+  candidates: Array<{
+    id: string;
+    name: string;
+    title: string;
+    llm_response: string;
+    matchingScore: number;
+  }>;
+}
 
 const JobPostDetailsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [jobDetails, setJobDetails] = useState<JobPostDetails | null>(null);
+
+  useEffect(() => {
+    const fetchJobPostDetails = async () => {
+      try {
+        const response = await axios.get<JobPostDetails>('http://localhost:5000/api/job_post_details');
+        setJobDetails(response.data);
+      } catch (error) {
+        console.error('Error fetching job post details:', error);
+      }
+    };
+    fetchJobPostDetails();
+  }, []);
 
   const handleBackClick = () => {
     navigate('/employer');
   };
-  
 
-  const candidates = [
-    {
-      id: '1',
-      name: 'Mohamed Khalifa',
-      title: 'Product Designer',
-      description: 'Mohamed Khalifa is a suitable candidate for the Data Scientist role because...',
-      matchingScore: 88.6,
-      imageUrl: 'https://cdn.builder.io/api/v1/image/assets/TEMP/8338af4c3896ac5eda00af734a541c80f761a4600b477a39f7b91e3ef44b9154?placeholderIfAbsent=true&apiKey=e8521392b64d4ca28efa899b1eeac3c3'
-    },
-    // Add more candidates as needed
-  ];
+  const handleDownloadCV = async (candidateId: string) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/download_cv/${candidateId}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `candidate_${candidateId}_cv.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error downloading CV:', error);
+      alert('Failed to download CV. Please try again.');
+    }
+  };
+
+  if (!jobDetails) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col p-6 bg-gray-100">
@@ -32,7 +67,7 @@ const JobPostDetailsPage: React.FC = () => {
         />
         <span>Back to all job posts</span>
       </button>
-
+      
       <div className="flex flex-col mt-5 w-full">
         <div className="flex flex-col items-start p-6 w-full bg-white rounded-xl">
           <div className="flex justify-between items-start w-full">
@@ -43,22 +78,11 @@ const JobPostDetailsPage: React.FC = () => {
                 alt="Company logo"
               />
               <div>
-                <h2 className="text-2xl font-semibold text-zinc-950">Senior UX Designer</h2>
-                <p className="text-sm text-zinc-500">ADNOC</p>
+                <h2 className="text-2xl font-semibold text-zinc-950">{jobDetails.jobTitle}</h2>
+                <p className="text-sm text-zinc-500">{jobDetails.companyName}</p>
               </div>
             </div>
             <button className="px-4 py-2 text-white bg-indigo-900 rounded-lg">Edit Job</button>
-          </div>
-          <div className="flex mt-6 space-x-8">
-            <JobInfoItem icon="🏷️" title="Job Reference Code" value="70HK661" />
-            <JobInfoItem icon="📅" title="Job Posted" value="1 Sep, 2024" />
-            <JobInfoItem icon="⏳" title="Job expire in" value="30 Sep, 2024" />
-            <JobInfoItem icon="🎓" title="Education" value="Bachelor is a must" />
-          </div>
-          <div className="flex mt-6 space-x-8">
-            <JobInfoItem icon="💰" title="Salary" value="AED 50k-80k/month" />
-            <JobInfoItem icon="📍" title="Location" value="Abu Dhabi, UAE" />
-            <JobInfoItem icon="⏱️" title="Experience" value="2-3 Years" />
           </div>
         </div>
 
@@ -86,16 +110,16 @@ const JobPostDetailsPage: React.FC = () => {
           <div className="flex flex-col mt-6 w-full">
             <h2 className="text-xl font-semibold tracking-tight leading-relaxed text-indigo-900">
               Top 3 Candidates
-              </h2>
-            {candidates.map((candidate) => (
+            </h2>
+            {jobDetails.candidates.map((candidate) => (
               <CandidateCard 
-                key={candidate.id} 
+                key={candidate.id}
                 id={candidate.id}
                 name={candidate.name}
                 title={candidate.title}
-                description={candidate.description}
+                llm_response={candidate.llm_response}
                 matchingScore={candidate.matchingScore}
-                imageUrl={candidate.imageUrl}
+                onDownloadCV={() => handleDownloadCV(candidate.id)}
               />
             ))}
           </div>
@@ -104,13 +128,5 @@ const JobPostDetailsPage: React.FC = () => {
     </div>
   );
 };
-
-const JobInfoItem: React.FC<{ icon: string; title: string; value: string }> = ({ icon, title, value }) => (
-  <div className="flex flex-col">
-    <span className="text-2xl mb-2">{icon}</span>
-    <span className="text-xs uppercase text-zinc-500">{title}</span>
-    <span className="text-sm font-medium text-zinc-900">{value}</span>
-  </div>
-);
 
 export default JobPostDetailsPage;

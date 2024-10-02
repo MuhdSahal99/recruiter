@@ -27,7 +27,7 @@ const Header: React.FC = () => {
           />
           <div className="text-sm">
             <p className="font-medium">Mohamed Khalifa</p>
-            <p className="text-xs text-gray-500">Product Designer</p>
+            <p className="text-xs text-gray-500">Recruiter</p>
           </div>
           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

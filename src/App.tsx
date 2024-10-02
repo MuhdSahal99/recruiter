@@ -13,6 +13,7 @@ import CandidateUpload from './pages/Candidate/CandidateUpload';
 import EmployerUpload from './pages/employer/EmployerUpload';
 
 
+
 // Import other pages as needed
 
 const App: React.FC = () => {

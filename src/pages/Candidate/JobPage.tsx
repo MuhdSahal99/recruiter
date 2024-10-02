@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import TypingEffect from '../../componenets/TypingEffect';
+import styles from './JobCard.module.css';
+
 
 interface JobMatch {
   id: string;
@@ -9,11 +12,25 @@ interface JobMatch {
   location: string;
   salary: string;
   similarityScore: string;
+  llm_response?: string; // Add llm_response field
 }
 
+const formatLLMResponse = (response: string) => {
+  const sections = response.split('\n\n');
+  return sections.map(section => {
+    const [title, ...content] = section.split('\n');
+    const formattedContent = content.map(line => {
+      if (line.trim().startsWith('-') || line.trim().startsWith('*')) {
+        return `<li>${line.trim().substring(1).trim()}</li>`;
+      }
+      return `<p>${line.trim()}</p>`;
+    }).join('');
+    
+    return `<h3 class="text-lg font-semibold mt-4 mb-2">${title.trim()}</h3><ul class="list-disc list-inside">${formattedContent}</ul>`;
+  }).join('');
+};
 
-
-const JobCard: React.FC<{ job: JobMatch, actualId: number }> = ({ job, actualId }) => (
+const JobCard: React.FC<{ job: JobMatch }> = ({ job }) => (
   <div className="flex overflow-hidden flex-col gap-6 p-6 w-full bg-white rounded-xl border border-solid border-zinc-200 max-md:px-5 max-md:max-w-full mb-4">
     <div className="flex flex-wrap gap-10 justify-between items-center w-full max-md:max-w-full">
       <div className="flex gap-4 items-center self-stretch my-auto min-w-[240px]">
@@ -53,9 +70,21 @@ const JobCard: React.FC<{ job: JobMatch, actualId: number }> = ({ job, actualId 
         </div>
       </div>
     </div>
+    {job.llm_response && (
+      <div className="mt-4 text-sm text-gray-700">
+        <h2 className="text-xl font-semibold mb-2">Job Match Analysis:</h2>
+        <div className={styles.analysisContent}>
+          <TypingEffect 
+            text={formatLLMResponse(job.llm_response)} 
+            speed={30} 
+            html={true}
+          />
+        </div>
+      </div>
+    )}
     <div className="flex gap-3 items-start mt-8 justify-end">
       <Link
-        to={`/candidate/jobs/${actualId}`} 
+        to={`/candidate/jobs/${job.id}`} 
         className="flex overflow-hidden gap-2 justify-center items-center py-2 px-3.5 text-sm font-medium leading-none text-white bg-indigo-900 rounded-lg border border-solid shadow-xl border-white border-opacity-30 w-[126px]"
       > 
         View details
@@ -64,76 +93,27 @@ const JobCard: React.FC<{ job: JobMatch, actualId: number }> = ({ job, actualId 
   </div>
 );
 
-// const JobsPage: React.FC = () => {
-//   const [jobMatches, setJobMatches] = useState<JobMatch[]>([]);
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     const fetchJobMatches = async () => {
-//       try {
-//         const response = await axios.get<JobMatch[]>('http://localhost:5000/api/job_matches');
-//         setJobMatches(response.data);
-//         setIsLoading(false);
-//       } catch (err) {
-//         setError('Failed to fetch job matches. Please try again later.');
-//         setIsLoading(false);
-//       }
-//     };
-
-//     fetchJobMatches();
-//   }, []);
-
-//   if (isLoading) {
-//     return <div>Loading...</div>;
-//   }
-
-//   if (error) {
-//     return <div>{error}</div>;
-//   }
-
-//   return (
-//     <div className="flex gap-6 items-center p-6">
-//       <div className="flex flex-col flex-1 shrink self-stretch my-auto w-full basis-0 min-w-[240px] max-md:max-w-full">
-//         {jobMatches.map((job) => (
-//           <JobCard key={job.id} job={job} />
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default JobsPage;
 
 const JobsPage: React.FC = () => {
   const [jobMatches, setJobMatches] = useState<JobMatch[]>([]);
-  const [availableIds, setAvailableIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchJobMatches = async () => {
       try {
         setIsLoading(true);
-        const [matchesResponse, idsResponse] = await Promise.all([
-          axios.get<JobMatch[]>('http://localhost:5000/api/job_matches'),
-          axios.get<{ job_ids: number[] }>('http://localhost:5000/api/available_job_ids')
-        ]);
-
-        console.log('Job matches:', matchesResponse.data);
-        console.log('Available IDs:', idsResponse.data.job_ids);
-
-        setJobMatches(matchesResponse.data);
-        setAvailableIds(idsResponse.data.job_ids);
+        const response = await axios.get<JobMatch[]>('http://localhost:5000/api/job_matches');
+        setJobMatches(response.data);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch job data. Please try again later.');
+        console.error('Error fetching job matches:', err);
+        setError('Failed to fetch job matches. Please try again later.');
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchJobMatches();
   }, []);
 
   if (isLoading) {
@@ -151,8 +131,7 @@ const JobsPage: React.FC = () => {
           jobMatches.map((job, index) => (
             <JobCard 
               key={job.id} 
-              job={job} 
-              actualId={availableIds[index] || parseInt(job.id)}
+              job={job}
             />
           ))
         ) : (

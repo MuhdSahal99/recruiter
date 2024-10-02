@@ -9,9 +9,11 @@ const EmployerUpload: React.FC = () => {
   const navigate = useNavigate();
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [uploadedInterviewInfo, setUploadedInterviewInfo] = useState<{ id: string } | null>(null);
 
-  const handleUpload = async (file: File, uploadType: UploadType) => {
-    if (uploadType === 'CV') {
+
+  const handleUpload = async (file: File, type: UploadType) => {
+    if (type === 'CV') {
       setErrorMessage('Employers cannot upload CVs.');
       return;
     }
@@ -20,7 +22,7 @@ const EmployerUpload: React.FC = () => {
     formData.append('file', file);
 
     try {
-      const endpoint = uploadType === 'Job Description' ? '/api/upload_job_description' : '/api/upload_interview_script';
+      const endpoint = type === 'Job Description' ? '/api/upload_job_description' : '/api/upload_interview_script';
       const response = await axios.post(`http://localhost:5000${endpoint}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -30,10 +32,15 @@ const EmployerUpload: React.FC = () => {
       if (response.status === 200) {
         setUploadStatus('success');
         setErrorMessage(null);
-        alert(`${uploadType} uploaded successfully!`);
+        alert(`${type} uploaded successfully!`);
+        if (type === 'Interview Script') {
+          const interviewId = response.data.interview_script.id;
+          setUploadedInterviewInfo({ id: interviewId });
+         
+        }
       } else {
         setUploadStatus('error');
-        setErrorMessage(`Failed to upload ${uploadType}. Please try again.`);
+        setErrorMessage(`Failed to upload ${type}. Please try again.`);
       }
     } catch (error) {
       setUploadStatus('error');
@@ -53,7 +60,7 @@ const EmployerUpload: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="space-y-6">
       <UploadPage userType="employer" onUpload={handleUpload} />
       {uploadStatus === 'success' && (
         <div className="mt-4 p-2 bg-green-100 text-green-700 rounded">
@@ -65,7 +72,7 @@ const EmployerUpload: React.FC = () => {
           {errorMessage || 'Failed to upload file. Please try again.'}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
